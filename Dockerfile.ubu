@@ -1,0 +1,65 @@
+ARG UBUNTU_DIST=noble
+FROM ubuntu:noble
+
+ARG UBUNTU_DIST
+ARG JUST_VERSION
+ARG BUILD_VERSION
+ARG FULL_VERSION
+ARG ARCH
+ARG JUST_RELEASE
+ARG BUILD_DATE
+
+RUN mkdir -p /output/usr/bin \
+             /output/usr/share/doc/just \
+             /output/usr/share/man/man1 \
+             /output/usr/share/bash-completion/completions \
+             /output/usr/share/fish/vendor_completions.d \
+             /output/usr/share/zsh/vendor-completions \
+             /output/DEBIAN
+
+# Binary
+COPY ${JUST_RELEASE}/just /output/usr/bin/just
+RUN chmod 755 /output/usr/bin/just
+
+# Man page (gzip -n for reproducible output)
+COPY ${JUST_RELEASE}/just.1 /tmp/just.1
+RUN gzip -9 -n -c /tmp/just.1 > /output/usr/share/man/man1/just.1.gz \
+ && chmod 644 /output/usr/share/man/man1/just.1.gz \
+ && rm -f /tmp/just.1
+
+# Shell completions
+COPY ${JUST_RELEASE}/completions/just.bash /output/usr/share/bash-completion/completions/just
+COPY ${JUST_RELEASE}/completions/just.fish /output/usr/share/fish/vendor_completions.d/just.fish
+COPY ${JUST_RELEASE}/completions/just.zsh  /output/usr/share/zsh/vendor-completions/_just
+RUN chmod 644 /output/usr/share/bash-completion/completions/just \
+              /output/usr/share/fish/vendor_completions.d/just.fish \
+              /output/usr/share/zsh/vendor-completions/_just
+
+# Docs: copyright, upstream README, upstream changelog
+COPY output/copyright /output/usr/share/doc/just/copyright
+COPY ${JUST_RELEASE}/README.md /output/usr/share/doc/just/README.md
+RUN chmod 644 /output/usr/share/doc/just/copyright /output/usr/share/doc/just/README.md
+COPY changelog.upstream /tmp/changelog.upstream
+RUN gzip -9 -n -c /tmp/changelog.upstream > /output/usr/share/doc/just/changelog.gz \
+ && chmod 644 /output/usr/share/doc/just/changelog.gz \
+ && rm -f /tmp/changelog.upstream
+
+# Debian changelog (substitute placeholders, then gzip)
+COPY output/changelog.Debian /tmp/changelog.Debian
+RUN sed -i "s/FULL_VERSION/$FULL_VERSION/" /tmp/changelog.Debian \
+ && sed -i "s/DIST/$UBUNTU_DIST/" /tmp/changelog.Debian \
+ && sed -i "s|DATE|$BUILD_DATE|" /tmp/changelog.Debian \
+ && gzip -9 -n -c /tmp/changelog.Debian > /output/usr/share/doc/just/changelog.Debian.gz \
+ && chmod 644 /output/usr/share/doc/just/changelog.Debian.gz \
+ && rm -f /tmp/changelog.Debian
+
+# Control + maintainer scripts
+COPY output/DEBIAN/control /output/DEBIAN/control
+COPY output/DEBIAN/postinst /output/DEBIAN/postinst
+RUN chmod 755 /output/DEBIAN/postinst
+RUN sed -i "s/JUST_VERSION/$JUST_VERSION/" /output/DEBIAN/control \
+ && sed -i "s/BUILD_VERSION/$BUILD_VERSION/" /output/DEBIAN/control \
+ && sed -i "s/DIST/$UBUNTU_DIST/" /output/DEBIAN/control \
+ && sed -i "s/SUPPORTED_ARCHITECTURES/$ARCH/" /output/DEBIAN/control
+
+RUN dpkg-deb --build /output /just_${FULL_VERSION}.deb

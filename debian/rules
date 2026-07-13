@@ -1,0 +1,45 @@
+#!/usr/bin/make -f
+DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+JUST_VERSION := $(shell dpkg-parsechangelog -S Version | sed 's/[-~].*//')
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+	@arch="$(DEB_HOST_ARCH)"; \
+	case "$$arch" in \
+		amd64)   TARGET="x86_64-unknown-linux-musl" ;; \
+		arm64)   TARGET="aarch64-unknown-linux-musl" ;; \
+		armel)   TARGET="arm-unknown-linux-musleabihf" ;; \
+		armhf)   TARGET="armv7-unknown-linux-musleabihf" ;; \
+		riscv64) TARGET="riscv64gc-unknown-linux-musl" ;; \
+		loong64) TARGET="loongarch64-unknown-linux-musl" ;; \
+		*) echo "Unsupported architecture: $$arch"; exit 1 ;; \
+	esac; \
+	REL="just-$(JUST_VERSION)-$$TARGET"; \
+	echo "Downloading $$REL for $(JUST_VERSION)..."; \
+	wget -q "https://github.com/casey/just/releases/download/$(JUST_VERSION)/$$REL.tar.gz"; \
+	mkdir -p just-dist; \
+	tar -xf "$$REL.tar.gz" -C just-dist; \
+	rm -f "$$REL.tar.gz"
+
+override_dh_auto_install:
+	install -D -m 755 just-dist/just debian/just/usr/bin/just
+	install -D -m 644 just-dist/just.1 debian/just/usr/share/man/man1/just.1
+	install -D -m 644 just-dist/completions/just.bash debian/just/usr/share/bash-completion/completions/just
+	install -D -m 644 just-dist/completions/just.fish debian/just/usr/share/fish/vendor_completions.d/just.fish
+	install -D -m 644 just-dist/completions/just.zsh  debian/just/usr/share/zsh/vendor-completions/_just
+
+override_dh_installchangelogs:
+	dh_installchangelogs CHANGELOG.md
+
+override_dh_auto_test:
+
+override_dh_auto_clean:
+	rm -rf just-dist || true
+
+override_dh_strip:
+
+override_dh_shlibdeps:

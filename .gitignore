@@ -1,0 +1,16 @@
+# .deb packages
+*.deb
+
+# Source package artifacts
+*.dsc
+*.orig.tar.gz
+*.debian.tar.xz
+*.buildinfo
+*.changes
+
+# Downloaded / extracted build inputs
+changelog.upstream
+just-*/
+
+.idea/*
+.DS_Store

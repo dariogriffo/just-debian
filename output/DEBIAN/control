@@ -1,0 +1,12 @@
+Section: devel
+Priority: optional
+Maintainer: Dario Griffo <dariogriffo@gmail.com>
+Homepage: https://github.com/casey/just
+Package: just
+Version: JUST_VERSION-BUILD_VERSION~DIST
+Architecture: SUPPORTED_ARCHITECTURES
+Description: handy way to save and run project-specific commands
+ just is a command runner that saves and runs project-specific commands,
+ called recipes, stored in a file named justfile with a syntax inspired by
+ make. It avoids make's quirks: recipes are not build targets, so just does
+ not depend on file modification times to decide what to run.

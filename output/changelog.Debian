@@ -1,0 +1,5 @@
+just (FULL_VERSION) DIST; urgency=low
+
+  * Repackage upstream just release as a Debian binary package.
+
+ -- Dario Griffo <dariogriffo@gmail.com>  DATE

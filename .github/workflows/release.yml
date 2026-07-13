@@ -1,0 +1,96 @@
+name: Build just for Debian
+
+on:
+  workflow_dispatch:
+    inputs:
+      just_version:
+        description: The version of just to build.
+        type: string
+        required: true
+      build_version:
+        description: The build version.
+        type: string
+        required: true
+      architecture:
+        description: Architecture to build (amd64, arm64, armel, armhf, riscv64, loong64, or 'all' for all architectures)
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'amd64'
+          - 'arm64'
+          - 'armel'
+          - 'armhf'
+          - 'riscv64'
+          - 'loong64'
+
+permissions:
+  contents: write
+
+jobs:
+  build-just:
+    name: Build Binary Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout just-debian
+        uses: actions/checkout@v4
+
+      - name: Build just
+        run: ./build_debian.sh ${{ inputs.just_version }} ${{ inputs.build_version }} ${{ inputs.architecture }} && ./build_ubuntu.sh ${{ inputs.just_version }} ${{ inputs.build_version }} ${{ inputs.architecture }}
+
+      - name: Upload Binary Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-artifact
+          path: just_*.deb
+
+  build-src:
+    name: Build Source Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout just-debian
+        uses: actions/checkout@v4
+
+      - name: Install dpkg-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends dpkg-dev devscripts wget ca-certificates
+
+      - name: Build source packages
+        run: ./build_src.sh ${{ inputs.just_version }} ${{ inputs.build_version }}
+
+      - name: Upload Source Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-artifact
+          path: |
+            just_*.dsc
+            just_*.orig.tar.gz
+            just_*.debian.tar.xz
+
+  release-just:
+    name: Release just for Debian
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [build-just, build-src]
+    steps:
+      - name: Download Binary Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binary-artifact
+
+      - name: Download Source Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: source-artifact
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          files: |
+            just_*.deb
+            just_*.dsc
+            just_*.orig.tar.gz
+            just_*.debian.tar.xz
+          name: ${{ inputs.just_version }}+${{ inputs.build_version }}
+          tag_name: ${{ inputs.just_version }}+${{ inputs.build_version }}
+          fail_on_unmatched_files: true

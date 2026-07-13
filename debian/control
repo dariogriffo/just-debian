@@ -1,0 +1,17 @@
+Source: just
+Section: devel
+Priority: optional
+Maintainer: Dario Griffo <dariogriffo@gmail.com>
+Build-Depends: debhelper-compat (= 13), wget, ca-certificates
+Standards-Version: 4.6.2
+Homepage: https://github.com/casey/just
+Rules-Requires-Root: no
+
+Package: just
+Architecture: amd64 arm64 armel armhf riscv64 loong64
+Depends: ${misc:Depends}
+Description: handy way to save and run project-specific commands
+ just is a command runner that saves and runs project-specific commands,
+ called recipes, stored in a file named justfile with a syntax inspired by
+ make. It avoids make's quirks: recipes are not build targets, so just does
+ not depend on file modification times to decide what to run.
