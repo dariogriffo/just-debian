@@ -49,6 +49,8 @@ Each package installs:
 
 ## Install/Update
 
+📖 **Step-by-step install guide:** [Debian](https://debian.griffo.io/install-latest-just-in-debian.html) · [Ubuntu](https://debian.griffo.io/install-latest-just-in-ubuntu.html)
+
 ### The Debian way
 
 ```sh
