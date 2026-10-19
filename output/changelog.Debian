@@ -1,4 +1,4 @@
-just (FULL_VERSION) DIST; urgency=low
+just (FULL_VERSION) stable; urgency=low
 
   * Repackage upstream just release as a Debian binary package.
 
